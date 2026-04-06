@@ -8,7 +8,7 @@ import click
 from rich.console import Console
 
 from . import __version__
-from .formatter import export_csv, print_lineage, print_mappings, print_summary
+from .formatter import export_csv, export_json, print_lineage, print_mappings, print_summary
 from .parser import parse_xml, scan_directory
 
 console = Console()
@@ -77,10 +77,17 @@ def scan(directory: Path, no_recursive: bool, detail: bool, lineage: bool) -> No
     "--output", "-o",
     type=click.Path(path_type=Path),
     default=Path("output"),
-    help="Output directory for CSV files.",
+    help="Output directory for exported files.",
 )
-def export(file: Path, output: Path) -> None:
-    """Export analysis results to CSV files."""
+@click.option(
+    "--format", "-f",
+    "fmt",
+    type=click.Choice(["csv", "json"], case_sensitive=False),
+    default="csv",
+    help="Export format: csv (multiple files) or json (single file).",
+)
+def export(file: Path, output: Path, fmt: str) -> None:
+    """Export analysis results to CSV or JSON files."""
     try:
         result = parse_xml(file)
     except Exception as e:
@@ -91,11 +98,15 @@ def export(file: Path, output: Path) -> None:
         console.print("[yellow]No Informatica metadata found.[/yellow]")
         return
 
-    files = export_csv(result, output)
-    console.print(f"\n[green]Exported {len(files)} CSV files to {output}/[/green]")
-    for f in files:
-        console.print(f"  - {f}")
-    console.print()
+    if fmt == "json":
+        json_file = export_json(result, output)
+        console.print(f"\n[green]Exported JSON to {json_file}[/green]\n")
+    else:
+        files = export_csv(result, output)
+        console.print(f"\n[green]Exported {len(files)} CSV files to {output}/[/green]")
+        for f in files:
+            console.print(f"  - {f}")
+        console.print()
 
 
 def main() -> None:

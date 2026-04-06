@@ -1,7 +1,8 @@
-"""Output formatters for terminal tables and CSV export."""
+"""Output formatters for terminal tables, CSV, and JSON export."""
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -179,3 +180,70 @@ def export_csv(result: ParseResult, output_dir: str | Path) -> list[str]:
     files_created.append(str(lineage_path))
 
     return files_created
+
+
+def _result_to_dict(result: ParseResult) -> dict:
+    """Convert ParseResult to a JSON-serializable dictionary."""
+    return {
+        "summary": {
+            "total_folders": len(result.folders),
+            "total_mappings": len(result.mappings),
+            "total_mapplets": len(result.mapplets),
+            "total_lineage_paths": len(result.lineage),
+            "folder_counts": [
+                {
+                    "folder": f.name,
+                    "mappings": len(f.mappings),
+                    "mapplets": len(f.mapplets),
+                }
+                for f in result.folders
+            ],
+        },
+        "mappings": [
+            {
+                "folder": m.folder,
+                "name": m.name,
+                "description": m.description,
+                "sources": m.sources,
+                "targets": m.targets,
+                "transformations": m.transformations,
+            }
+            for m in result.mappings
+        ],
+        "mapplets": [
+            {
+                "folder": m.folder,
+                "name": m.name,
+                "description": m.description,
+                "transformations": m.transformations,
+            }
+            for m in result.mapplets
+        ],
+        "lineage": [
+            {
+                "folder": e.folder,
+                "mapping": e.mapping,
+                "source": e.source,
+                "target": e.target,
+                "transformation_path": e.transformation_path,
+            }
+            for e in result.lineage
+        ],
+    }
+
+
+def export_json(result: ParseResult, output_dir: str | Path) -> str:
+    """Export all data to a single JSON file.
+
+    Returns the path of the created file.
+    """
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    json_path = out / "analysis.json"
+    data = _result_to_dict(result)
+
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+    return str(json_path)
