@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE POWERMART SYSTEM "powrmart.dtd">
+<POWERMART CREATION_DATE="04/07/2026 10:00:00" REPOSITORY_VERSION="186.90">
+  <REPOSITORY NAME="PROD_REPO" VERSION="186" CODEPAGE="UTF-8" DATABASETYPE="Oracle">
+    <FOLDER NAME="ETL_Finance" DESCRIPTION="Finance ETL jobs">
+      <SOURCE NAME="SRC_GL_ACCOUNTS" DATABASETYPE="Oracle" DBDNAME="FIN_DB" OWNERNAME="FIN"/>
+      <SOURCE NAME="SRC_GL_JOURNAL" DATABASETYPE="Oracle" DBDNAME="FIN_DB" OWNERNAME="FIN"/>
+      <TARGET NAME="TGT_DIM_ACCOUNT" DATABASETYPE="Oracle" DBDNAME="DW_DB" OWNERNAME="DW"/>
+      <TARGET NAME="TGT_FACT_JOURNAL" DATABASETYPE="Oracle" DBDNAME="DW_DB" OWNERNAME="DW"/>
+
+      <MAPPING NAME="m_Load_Dim_Account" DESCRIPTION="Load account dimension from GL" ISVALID="YES" OBJECTVERSION="3">
+        <SOURCE NAME="SRC_GL_ACCOUNTS" DATABASETYPE="Oracle" DBDNAME="FIN_DB"/>
+        <TARGET NAME="TGT_DIM_ACCOUNT" DATABASETYPE="Oracle" DBDNAME="DW_DB"/>
+        <TRANSFORMATION NAME="SQ_SRC_GL_ACCOUNTS" TYPE="Source Qualifier"/>
+        <TRANSFORMATION NAME="EXP_Account_Transform" TYPE="Expression"/>
+        <TRANSFORMATION NAME="LKP_Account_Type" TYPE="Lookup"/>
+        <TRANSFORMATION NAME="RTR_Account_Router" TYPE="Router"/>
+      </MAPPING>
+
+      <MAPPING NAME="m_Load_Fact_Journal" DESCRIPTION="Load journal fact table" ISVALID="YES" OBJECTVERSION="5">
+        <SOURCE NAME="SRC_GL_JOURNAL" DATABASETYPE="Oracle" DBDNAME="FIN_DB"/>
+        <TARGET NAME="TGT_FACT_JOURNAL" DATABASETYPE="Oracle" DBDNAME="DW_DB"/>
+        <TRANSFORMATION NAME="SQ_SRC_GL_JOURNAL" TYPE="Source Qualifier"/>
+        <TRANSFORMATION NAME="EXP_Journal_Calc" TYPE="Expression"/>
+        <TRANSFORMATION NAME="AGG_Journal_Summary" TYPE="Aggregator"/>
+      </MAPPING>
+
+      <MAPPLET NAME="mplt_Currency_Convert" DESCRIPTION="Reusable currency conversion logic">
+        <TRANSFORMATION NAME="INP_Currency" TYPE="Input"/>
+        <TRANSFORMATION NAME="LKP_Exchange_Rate" TYPE="Lookup"/>
+        <TRANSFORMATION NAME="EXP_Convert" TYPE="Expression"/>
+        <TRANSFORMATION NAME="OUT_Converted" TYPE="Output"/>
+      </MAPPLET>
+    </FOLDER>
+
+    <FOLDER NAME="ETL_Sales" DESCRIPTION="Sales ETL jobs">
+      <SOURCE NAME="SRC_ORDERS" DATABASETYPE="Oracle" DBDNAME="SALES_DB" OWNERNAME="SALES"/>
+      <TARGET NAME="TGT_FACT_ORDERS" DATABASETYPE="Oracle" DBDNAME="DW_DB" OWNERNAME="DW"/>
+      <TARGET NAME="TGT_DIM_PRODUCT" DATABASETYPE="Oracle" DBDNAME="DW_DB" OWNERNAME="DW"/>
+
+      <MAPPING NAME="m_Load_Fact_Orders" DESCRIPTION="Load orders fact" ISVALID="YES" OBJECTVERSION="2">
+        <SOURCE NAME="SRC_ORDERS" DATABASETYPE="Oracle" DBDNAME="SALES_DB"/>
+        <TARGET NAME="TGT_FACT_ORDERS" DATABASETYPE="Oracle" DBDNAME="DW_DB"/>
+        <TARGET NAME="TGT_DIM_PRODUCT" DATABASETYPE="Oracle" DBDNAME="DW_DB"/>
+        <TRANSFORMATION NAME="SQ_SRC_ORDERS" TYPE="Source Qualifier"/>
+        <TRANSFORMATION NAME="EXP_Order_Enrich" TYPE="Expression"/>
+        <TRANSFORMATION NAME="FIL_Active_Orders" TYPE="Filter"/>
+      </MAPPING>
+
+      <MAPPLET NAME="mplt_Date_Dimension" DESCRIPTION="Generate date dimension attributes">
+        <TRANSFORMATION NAME="INP_Date" TYPE="Input"/>
+        <TRANSFORMATION NAME="EXP_Date_Parts" TYPE="Expression"/>
+        <TRANSFORMATION NAME="OUT_Date_Attrs" TYPE="Output"/>
+      </MAPPLET>
+
+      <MAPPLET NAME="mplt_SCD_Type2" DESCRIPTION="Slowly changing dimension type 2 handler">
+        <TRANSFORMATION NAME="INP_Record" TYPE="Input"/>
+        <TRANSFORMATION NAME="LKP_Existing" TYPE="Lookup"/>
+        <TRANSFORMATION NAME="RTR_New_Update" TYPE="Router"/>
+        <TRANSFORMATION NAME="UPD_Set_Expiry" TYPE="Update Strategy"/>
+        <TRANSFORMATION NAME="OUT_Insert" TYPE="Output"/>
+        <TRANSFORMATION NAME="OUT_Update" TYPE="Output"/>
+      </MAPPLET>
+    </FOLDER>
+
+    <FOLDER NAME="ETL_HR" DESCRIPTION="HR data loads">
+      <MAPPING NAME="m_Load_Dim_Employee" DESCRIPTION="Load employee dimension" ISVALID="YES" OBJECTVERSION="1">
+        <SOURCE NAME="SRC_EMPLOYEES" DATABASETYPE="Oracle" DBDNAME="HR_DB"/>
+        <TARGET NAME="TGT_DIM_EMPLOYEE" DATABASETYPE="Oracle" DBDNAME="DW_DB"/>
+        <TRANSFORMATION NAME="SQ_SRC_EMPLOYEES" TYPE="Source Qualifier"/>
+        <TRANSFORMATION NAME="EXP_Employee_Name" TYPE="Expression"/>
+      </MAPPING>
+    </FOLDER>
+  </REPOSITORY>
+</POWERMART>

@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "infa-xml-analyzer"
+version = "0.1.0"
+description = "Parse Informatica PowerCenter XML exports and extract mappings, mapplets, folders, and data lineage."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Kuber-2000"},
+]
+keywords = ["informatica", "etl", "data-engineering", "xml", "lineage", "powercenter"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Database",
+]
+dependencies = [
+    "lxml>=4.9.0",
+    "pandas>=1.5.0",
+    "click>=8.0.0",
+    "rich>=13.0.0",
+]
+
+[project.scripts]
+infa-xml-analyzer = "infa_xml_analyzer.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Kuber-2000/infa-xml-analyzer"
+Repository = "https://github.com/Kuber-2000/infa-xml-analyzer"
+Issues = "https://github.com/Kuber-2000/infa-xml-analyzer/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
