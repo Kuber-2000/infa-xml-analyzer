@@ -109,6 +109,70 @@ def export(file: Path, output: Path, fmt: str) -> None:
         console.print()
 
 
+@cli.command()
+@click.argument("file", type=click.Path(exists=True, path_type=Path))
+def validate(file: Path) -> None:
+    """Validate an Informatica XML file without full analysis.
+
+    Checks if the file is well-formed XML and contains expected
+    Informatica PowerCenter elements (POWERMART, REPOSITORY, FOLDER).
+    """
+    from lxml import etree
+
+    try:
+        tree = etree.parse(str(file))
+    except etree.XMLSyntaxError as e:
+        console.print(f"[red]INVALID[/red] - XML syntax error: {e}")
+        raise SystemExit(1)
+
+    root = tree.getroot()
+    tag = root.tag if root is not None else None
+
+    if tag != "POWERMART":
+        console.print(
+            f"[yellow]WARNING[/yellow] - Root element is <{tag}>, "
+            f"expected <POWERMART>. This may not be an Informatica export."
+        )
+        raise SystemExit(1)
+
+    repo_count = len(root.findall(".//REPOSITORY"))
+    folder_count = len(root.findall(".//FOLDER"))
+    mapping_count = len(root.findall(".//MAPPING"))
+    mapplet_count = len(root.findall(".//MAPPLET"))
+
+    console.print(f"[green]VALID[/green] - {file.name}")
+    console.print(f"  Repositories: {repo_count}")
+    console.print(f"  Folders:      {folder_count}")
+    console.print(f"  Mappings:     {mapping_count}")
+    console.print(f"  Mapplets:     {mapplet_count}")
+
+
+@cli.command()
+@click.argument("file", type=click.Path(exists=True, path_type=Path))
+def stats(file: Path) -> None:
+    """Show quick statistics for an Informatica XML file."""
+    try:
+        result = parse_xml(file)
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise SystemExit(1)
+
+    total_sources = sum(len(m.sources) for m in result.mappings)
+    total_targets = sum(len(m.targets) for m in result.mappings)
+    total_transforms = sum(len(m.transformations) for m in result.mappings)
+    total_transforms += sum(len(m.transformations) for m in result.mapplets)
+
+    console.print(f"\n[bold]Quick Stats: {file.name}[/bold]")
+    console.print(f"  Folders:         {len(result.folders)}")
+    console.print(f"  Mappings:        {len(result.mappings)}")
+    console.print(f"  Mapplets:        {len(result.mapplets)}")
+    console.print(f"  Sources:         {total_sources}")
+    console.print(f"  Targets:         {total_targets}")
+    console.print(f"  Transformations: {total_transforms}")
+    console.print(f"  Lineage paths:   {len(result.lineage)}")
+    console.print()
+
+
 def main() -> None:
     """Entry point."""
     cli()
